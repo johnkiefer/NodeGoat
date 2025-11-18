@@ -1,4 +1,4 @@
-name: Checkmarx Vorpal Scan
+name: Checkmarx Vorpal SAST Scan
 
 on:
   push:
@@ -15,8 +15,8 @@ permissions:
   actions: read
 
 jobs:
-  vorpal-scan:
-    name: Checkmarx Vorpal SAST Scan
+  vorpal-sast-scan:
+    name: Vorpal SAST Analysis
     runs-on: ubuntu-latest
     
     steps:
@@ -25,60 +25,63 @@ jobs:
       with:
         fetch-depth: 0  # Full history for better analysis
     
-    - name: Checkmarx Vorpal Scan
+    - name: Checkmarx Vorpal SAST Scan
       uses: checkmarx/ast-github-action@main
       with:
-        # Project configuration
-        project_name: NodeGoat
+        # Authentication
         base_uri: https://ast.checkmarx.net
         cx_tenant: ${{ secrets.CHECKMARX_TENANT }}
         cx_client_id: ${{ secrets.CHECKMARX_CLIENT_ID }}
         cx_client_secret: ${{ secrets.CHECKMARX_CLIENT_SECRET }}
         
-        # Scan configuration
-        scan_types: sast
+        # Project configuration
+        project_name: NodeGoat
         branch: ${{ github.ref_name }}
         
+        # Scan type - SAST only (Vorpal)
+        scan_types: sast
+        
         # Results configuration
-        output_name: checkmarx-vorpal-results
-        report_format: sarif,pdf,json
+        output_name: vorpal-results
+        report_format: sarif,json,pdf
         
-        # Thresholds (adjust based on your needs)
-        break_build: false  # Set to true to fail on findings
-        sast-high-threshold: 10
-        sast-medium-threshold: 50
+        # Thresholds
+        break_build: false
+        sast_high: 10
+        sast_medium: 50
+        sast_low: 100
         
-        # Additional options
+        # Additional SAST parameters
         additional_params: |
           --sast-incremental
-          --report-sbom
           --debug
     
-    - name: Upload SARIF to GitHub
+    - name: Upload SARIF to GitHub Security
       uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
-        sarif_file: checkmarx-vorpal-results.sarif
-        category: checkmarx-vorpal
+        sarif_file: vorpal-results.sarif
+        category: checkmarx-vorpal-sast
     
-    - name: Upload Scan Results as Artifacts
+    - name: Upload Scan Reports
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: checkmarx-vorpal-reports
+        name: vorpal-scan-reports
         path: |
-          checkmarx-vorpal-results.sarif
-          checkmarx-vorpal-results.pdf
-          checkmarx-vorpal-results.json
+          vorpal-results.sarif
+          vorpal-results.pdf
+          vorpal-results.json
         retention-days: 30
     
-    - name: Create Summary Report
+    - name: Generate Scan Summary
       if: always()
       run: |
-        echo "## Checkmarx Vorpal Scan Results" >> $GITHUB_STEP_SUMMARY
+        echo "## 🔍 Checkmarx Vorpal SAST Scan Complete" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "📊 Scan completed for NodeGoat repository" >> $GITHUB_STEP_SUMMARY
-        echo "🔍 Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-        echo "📅 Scan Date: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "**Repository:** NodeGoat" >> $GITHUB_STEP_SUMMARY
+        echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Scan Date:** $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "View detailed results in the Security tab" >> $GITHUB_STEP_SUMMARY
+        echo "📊 View detailed results in the **Security** tab → **Code scanning**" >> $GITHUB_STEP_SUMMARY
