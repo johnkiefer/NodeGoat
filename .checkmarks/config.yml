@@ -1,0 +1,57 @@
+# Checkmarx Vorpal SAST Configuration
+version: 1.0
+
+# Scan settings - SAST only
+scan:
+  include:
+    - "**/*.js"
+    - "**/*.jsx"
+    - "**/*.ts"
+    - "**/*.tsx"
+    - "**/*.json"
+    - "**/*.html"
+    - "**/*.ejs"
+  
+  exclude:
+    - "**/node_modules/**"
+    - "**/test/**"
+    - "**/tests/**"
+    - "**/*.test.js"
+    - "**/*.spec.js"
+    - "**/coverage/**"
+    - "**/dist/**"
+    - "**/build/**"
+    - "**/.git/**"
+
+# SAST (Vorpal) specific settings
+sast:
+  incremental: true
+  preset: "Checkmarx Default"
+  engine_verbose: true
+  
+  # Language-specific settings for Node.js
+  language_mode: "multi"
+  
+  # Filter configurations
+  filters:
+    severity:
+      - high
+      - medium
+      - low
+    
+    state:
+      - "TO_VERIFY"
+      - "CONFIRMED"
+      - "NOT_EXPLOITABLE"
+    
+    # Common vulnerability categories for NodeGoat
+    categories:
+      - "SQL_Injection"
+      - "Stored_XSS"
+      - "Reflected_XSS_All_Clients"
+      - "Command_Injection"
+      - "Code_Injection"
+      - "LDAP_Injection"
+      - "Path_Traversal"
+      - "Client_Potential_XSS"
+      - "Second_Order_SQL_Injection"
