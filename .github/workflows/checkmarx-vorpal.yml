@@ -1,0 +1,84 @@
+name: Checkmarx Vorpal Scan
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly scan on Monday at 2 AM
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  vorpal-scan:
+    name: Checkmarx Vorpal SAST Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for better analysis
+    
+    - name: Checkmarx Vorpal Scan
+      uses: checkmarx/ast-github-action@main
+      with:
+        # Project configuration
+        project_name: NodeGoat
+        base_uri: https://ast.checkmarx.net
+        cx_tenant: ${{ secrets.CHECKMARX_TENANT }}
+        cx_client_id: ${{ secrets.CHECKMARX_CLIENT_ID }}
+        cx_client_secret: ${{ secrets.CHECKMARX_CLIENT_SECRET }}
+        
+        # Scan configuration
+        scan_types: sast
+        branch: ${{ github.ref_name }}
+        
+        # Results configuration
+        output_name: checkmarx-vorpal-results
+        report_format: sarif,pdf,json
+        
+        # Thresholds (adjust based on your needs)
+        break_build: false  # Set to true to fail on findings
+        sast-high-threshold: 10
+        sast-medium-threshold: 50
+        
+        # Additional options
+        additional_params: |
+          --sast-incremental
+          --report-sbom
+          --debug
+    
+    - name: Upload SARIF to GitHub
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: checkmarx-vorpal-results.sarif
+        category: checkmarx-vorpal
+    
+    - name: Upload Scan Results as Artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: checkmarx-vorpal-reports
+        path: |
+          checkmarx-vorpal-results.sarif
+          checkmarx-vorpal-results.pdf
+          checkmarx-vorpal-results.json
+        retention-days: 30
+    
+    - name: Create Summary Report
+      if: always()
+      run: |
+        echo "## Checkmarx Vorpal Scan Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "📊 Scan completed for NodeGoat repository" >> $GITHUB_STEP_SUMMARY
+        echo "🔍 Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "📅 Scan Date: $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "View detailed results in the Security tab" >> $GITHUB_STEP_SUMMARY
