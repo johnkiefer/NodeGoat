@@ -17,7 +17,7 @@ jobs:
       - name: Run KICS Scan
         uses: checkmarx/kics@v2.2.0 # You can pin to a specific version, e.g., @v2.2.0
         with:
-          path: './NodeGoat/Dockerfile'  # Scan the entire repository; adjust to specific paths if needed (e.g., 'terraform/')
+          path: 'Dockerfile'  # Scan the entire repository; adjust to specific paths if needed (e.g., 'terraform/')
           output_path: results.json  # Optional: Where to save scan results
           output_formats: 'json,sarif'  # Formats for results (SARIF integrates well with GitHub)
           ignore_on_exit: 'all'  # Options: 'all', 'results', 'errors' – 'results' fails on findings
