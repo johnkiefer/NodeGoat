@@ -1,0 +1,33 @@
+name: KICS IaC Scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  kics-job:
+    runs-on: ubuntu-latest
+    name: Scan IaC with KICS
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run KICS Scan
+        uses: checkmarx/kics@v2.1.16 # You can pin to a specific version, e.g., @v2.2.0
+        with:
+          path: '.'  # Scan the entire repository; adjust to specific paths if needed (e.g., 'terraform/')
+          output_path: results.json  # Optional: Where to save scan results
+          output_formats: 'json,sarif'  # Formats for results (SARIF integrates well with GitHub)
+          ignore_on_exit: 'all'  # Options: 'all', 'results', 'errors' – 'results' fails on findings
+          fail_on: 'high,medium'  # Fail the build on high/medium severity issues; adjust as needed
+          # Additional optional flags (uncomment and customize):
+          # platform_type: 'terraform,dockerfile'  # Limit to specific IaC types
+          # exclude_paths: 'tests/,docs/'  # Exclude paths from scan
+
+      - name: Upload SARIF results (for GitHub Security Alerts)
+        if: always()  # Upload even if scan fails
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif  # Matches the output_formats above
